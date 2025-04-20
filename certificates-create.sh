@@ -67,21 +67,27 @@ subjectKeyIdentifier   = hash
 keyUsage               = critical, keyCertSign, digitalSignature, keyEncipherment
 extendedKeyUsage       = clientAuth, serverAuth
 EOF
+
 if [[ ! -f ${CA_NAME}.crt ]]; then
   openssl req -x509 -sha256 -days 3650 -newkey rsa:4096 -keyout ${CA_NAME}.key -nodes -out ${CA_NAME}.crt -subj "/C=${CERT_DN_C}/ST=${CERT_DN_ST}/L=${CERT_DN_L}/O=${CERT_DN_O}/OU=${CERT_DN_OU}/CN=${CERT_DN_CN_CA}/emailAddress=${CERT_DN_MAIL_CA}" -extensions v3_req -config ${CA_NAME}.v3.ext
 fi
 
+
 # Keycloak server certificate
 openssl req -new -newkey rsa:4096 -keyout ${SERVER_NAME}.key -out ${SERVER_NAME}.csr -nodes -subj "/C=${CERT_DN_C}/ST=${CERT_DN_ST}/L=${CERT_DN_L}/O=${CERT_DN_O}/OU=${CERT_DN_OU}/CN=${CERT_DN_CN_SERVER}/emailAddress=${CERT_DN_MAIL_SERVER}"
+
 cat > "${SERVER_NAME}.v3.ext" << EOF
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
 keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
 EOF
+
 openssl x509 -req -CA ${CA_NAME}.crt -CAkey ${CA_NAME}.key -in ${SERVER_NAME}.csr -out ${SERVER_NAME}.crt -days 365 -CAcreateserial -extfile ${SERVER_NAME}.v3.ext
+
 
 # Client certificate
 openssl req -new -newkey rsa:4096 -nodes -keyout ${CLIENT_NAME}.key -out ${CLIENT_NAME}.csr -subj "/C=${CERT_DN_C}/ST=${CERT_DN_ST}/L=${CERT_DN_L}/O=${CERT_DN_O}/OU=${CERT_DN_OU}/CN=${CERT_DN_CN_CLIENT}/emailAddress=${CERT_DN_MAIL_CLIENT}"
+
 cat > "${CLIENT_NAME}.v3.ext" << EOF
 authorityKeyIdentifier=keyid,issuer
 nsCertType = client, email
@@ -94,7 +100,9 @@ openssl x509 -req -CA ${CA_NAME}.crt -CAkey ${CA_NAME}.key -in ${CLIENT_NAME}.cs
 
 # Export certificates and private keys to a p12 file to import them more easily
 cat ${CLIENT_NAME}.crt ${CLIENT_NAME}.key > ${CLIENT_NAME}.pem
+
 openssl pkcs12 -password pass:"" -export -in ${CLIENT_NAME}.pem -inkey ${CLIENT_NAME}.key -out ${CLIENT_NAME}.p12 -name "${CLIENT_NAME}"
+
 cat ${CA_NAME}.crt ${CA_NAME}.key > ${CA_NAME}.pem
 
 # Verify certificates (no "-x509_strict" added since these seem to miss extensions from its generation)

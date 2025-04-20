@@ -29,10 +29,12 @@ function deploy_keycloak() {
 	exit ${parse_result}
     elif [[ ${DIRECT_KEYCLOAK} == 1 ]]; then
         echo "Deploying Keycloak in direct mode..."
-        docker-compose -f docker-compose-direct.yaml up -d
+        # docker compose -f docker-compose-direct.yaml build
+        docker compose -f docker-compose-direct.yaml up -d --build
     elif [[ ${PROXIED_KEYCLOAK} == 1 ]]; then
         echo "Deploying Keycloak in proxy mode..."
-        docker-compose -f docker-compose-proxy.yaml up -d
+        # docker compose -f docker-compose-proxy.yaml up -d
+        docker compose rm --force -s
     fi
 }
 
@@ -45,7 +47,7 @@ function undeploy_keycloak() {
         exit ${parse_result}
     elif [[ ${DIRECT_KEYCLOAK} == 1 ]]; then
         echo "Undeploying Keycloak in direct mode..."
-        docker-compose -f docker-compose-direct.yaml down
+        docker compose -f docker-compose-direct.yaml down
     elif [[ ${PROXIED_KEYCLOAK} == 1 ]]; then
         echo "Undeploying Keycloak in proxy mode..."
         docker-compose -f docker-compose-proxy.yaml down
